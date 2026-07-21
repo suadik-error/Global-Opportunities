@@ -1,0 +1,145 @@
+import React from 'react';
+import { View, Text, Image, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+
+import Svg, { Defs, RadialGradient, Stop, Ellipse } from 'react-native-svg';
+
+export default function Onboarding2Screen() {
+  const router = useRouter();
+
+  return (
+    <View style={{ flex: 1, backgroundColor: '#6671E4' }}>
+      <SafeAreaView className="flex-1">
+        {/* Top Header: Pagination & Skip */}
+        <View className="flex-row items-center justify-between px-6 pt-4">
+          {/* Pagination (Screen 2 active) */}
+          <View className="flex-row items-center" style={{ gap: 6 }}>
+            <View className="bg-white/40 rounded-full" style={{ width: 4, height: 4 }} />
+            <View className="bg-white rounded-full" style={{ width: 6, height: 6 }} />
+            <View className="bg-white/40 rounded-full" style={{ width: 4, height: 4 }} />
+          </View>
+          
+          {/* Skip Button */}
+          <TouchableOpacity onPress={() => router.replace('/(auth)/login')}>
+            <Text 
+              className="text-white font-sans"
+              style={{ fontSize: 15 }}
+            >
+              Skip
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Hero Image */}
+        <View 
+          className="flex-1 items-center" 
+          style={{ justifyContent: 'flex-end', marginBottom: -80, position: 'relative' }}
+        >
+          {/* White Ellipse Background with Radial Gradient (Cross-platform Glow) */}
+          <View 
+            style={{
+              position: 'absolute',
+              width: 301,
+              height: 539,
+              bottom: 0,
+            }}
+          >
+            <Svg width="100%" height="100%" viewBox="0 0 301 539">
+              <Defs>
+                <RadialGradient
+                  id="glowGrad"
+                  cx="50%"
+                  cy="50%"
+                  rx="50%"
+                  ry="50%"
+                >
+                  <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.85" />
+                  <Stop offset="45%" stopColor="#FFFFFF" stopOpacity="0.5" />
+                  <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+                </RadialGradient>
+              </Defs>
+              <Ellipse cx="150.5" cy="269.5" rx="150.5" ry="269.5" fill="url(#glowGrad)" />
+            </Svg>
+          </View>
+          <Image
+            source={require('../../../assets/images/onboarding_2.png')}
+            style={{ 
+              width: '100%', 
+              height: '100%', 
+              zIndex: 1,
+              transform: [{ scale: 1.15 }, { translateY: 20 }]
+            }}
+            resizeMode="contain"
+          />
+
+          {/* Seamless fade to hide the horizontal line */}
+          <LinearGradient
+            colors={['rgba(102, 113, 228, 0)', '#6671E4']}
+            style={{
+              position: 'absolute',
+              bottom: 78, // Sits exactly on the edge of the bottom container
+              left: 0,
+              right: 0,
+              height: 120, // Huge smooth fade upwards
+              zIndex: 5,
+            }}
+          />
+        </View>
+
+        {/* Bottom Content Area */}
+        <View 
+          className="px-6 pb-12 pt-8" 
+          style={{ 
+            zIndex: 10,
+            backgroundColor: '#6671E4',
+          } as any}
+        >
+          {/* Typography */}
+          <View className="mb-4">
+            <Text 
+              className="text-white font-sans font-bold"
+              style={{ fontSize: 36, lineHeight: 42 }}
+            >
+              Create Your
+            </Text>
+            <Text 
+              className="text-white font-sans font-bold italic"
+              style={{ fontSize: 36, lineHeight: 42 }}
+            >
+              Employability
+            </Text>
+            <Text 
+              className="text-white font-sans font-bold"
+              style={{ fontSize: 36, lineHeight: 42 }}
+            >
+              Profile
+            </Text>
+          </View>
+
+          <Text 
+            className="text-white/90 font-sans mb-10"
+            style={{ fontSize: 13, lineHeight: 18 }}
+          >
+            Showcase your skills, qualifications, certifications, and portfolio to stand out globally.
+          </Text>
+
+          {/* Call to Action */}
+          <TouchableOpacity
+            onPress={() => router.push('/(onboarding)/3')}
+            className="bg-white w-full items-center shadow-sm"
+            style={{ height: 47, borderRadius: 8, justifyContent: 'center' }}
+          >
+            <Text 
+              className="text-[#6671E4] font-sans font-bold"
+              style={{ fontSize: 15 }}
+            >
+              Next
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </View>
+  );
+}

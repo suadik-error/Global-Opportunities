@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+:root {
+  --background: #F7F7F9;
+  --foreground: #1A1A1A;
+
+  /* Kredibble brand tokens — ported from kredibble-app/src/constants/design.ts */
+  --color-kb-primary: #6671E4;
+  --color-kb-primary-light: #8B95FF;
+  --color-kb-primary-dark: #3654FF;
+  --color-kb-bg-screen: #F7F7F9;
+  --color-kb-bg-card: #FFFFFF;
+  --color-kb-bg-alt: #F6F7F9;
+  --color-kb-text-body: #1A1A1A;
+  --color-kb-text-muted: #8A8D9F;
+  --color-kb-text-secondary: #595959;
+  --color-kb-text-placeholder: #A1A1AA;
+  --color-kb-border: #E5E6F2;
+  --color-kb-border-input: #EBEBEE;
+  --color-kb-success: #16A34A;
+  --color-kb-error: #ED4C5C;
+  --color-kb-warning: #F6B612;
+  --color-kb-divider: #EBEBEE;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+
+  --color-kb-primary: var(--color-kb-primary);
+  --color-kb-primary-light: var(--color-kb-primary-light);
+  --color-kb-primary-dark: var(--color-kb-primary-dark);
+  --color-kb-bg-screen: var(--color-kb-bg-screen);
+  --color-kb-bg-card: var(--color-kb-bg-card);
+  --color-kb-bg-alt: var(--color-kb-bg-alt);
+  --color-kb-text-body: var(--color-kb-text-body);
+  --color-kb-text-muted: var(--color-kb-text-muted);
+  --color-kb-text-secondary: var(--color-kb-text-secondary);
+  --color-kb-text-placeholder: var(--color-kb-text-placeholder);
+  --color-kb-border: var(--color-kb-border);
+  --color-kb-border-input: var(--color-kb-border-input);
+  --color-kb-success: var(--color-kb-success);
+  --color-kb-error: var(--color-kb-error);
+  --color-kb-warning: var(--color-kb-warning);
+  --color-kb-divider: var(--color-kb-divider);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+}
+
+/* Lighter scroll indicator across the dashboard (Firefox) */
+* {
+  scrollbar-color: #D8D9E3 transparent;
+  scrollbar-width: thin;
+}
+
+/* Lighter scroll indicator across the dashboard (Chrome/Safari/Edge) */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #D8D9E3;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #C4C6D6;
+}
