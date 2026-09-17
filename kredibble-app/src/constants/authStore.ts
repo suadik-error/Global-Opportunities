@@ -100,6 +100,16 @@ export interface HirerSecuritySettings {
   publicCompanyProfile: boolean;
 }
 
+export interface BackendUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  seeker?: unknown;
+  hirer?: unknown;
+  staff?: unknown;
+}
+
 // ─── Initial Data ─────────────────────────────────────────────────────────────
 
 const initialCompany: RecruiterCompany = {
@@ -295,11 +305,18 @@ const initialManagedGroups: ManagedGroup[] = [
 
 class AuthStateStore {
   role: 'seeker' | 'hirer' = 'seeker';
-  company: RecruiterCompany = { ...initialCompany };
-  candidates: Candidate[] = [...initialCandidates];
-  opportunities: PostedOpportunity[] = [...initialOpportunities];
-  managedGroups: ManagedGroup[] = [...initialManagedGroups];
-  verificationDocs: VerificationDocs = { ...initialVerificationDocs };
+  token: string | null = null;
+  user: BackendUser | null = null;
+  company: RecruiterCompany | null = null;
+  candidates: Candidate[] = [];
+  opportunities: PostedOpportunity[] = [];
+  managedGroups: ManagedGroup[] = [];
+  verificationDocs: VerificationDocs = {
+    businessReg: 'idle',
+    orgId: 'idle',
+    companyLogo: 'idle',
+    proofOfOrg: 'idle',
+  };
   hirerNotifications: HirerNotificationSettings = { ...initialHirerNotifications };
   hirerSecurity: HirerSecuritySettings = { ...initialHirerSecurity };
 
@@ -318,6 +335,63 @@ class AuthStateStore {
 
   setRole(role: 'seeker' | 'hirer') {
     this.role = role;
+    this.notify();
+  }
+
+  setOpportunities(opps: PostedOpportunity[]) {
+    this.opportunities = opps;
+    this.notify();
+  }
+
+  setCandidates(cands: Candidate[]) {
+    this.candidates = cands;
+    this.notify();
+  }
+
+  setSession(token: string, user: BackendUser) {
+    this.token = token;
+    this.user = user;
+    if (user.role === 'hirer' || user.role === 'seeker') {
+      this.role = user.role;
+    }
+
+    // Map backend user to store structures
+    if (user.role === 'hirer' && user.hirer) {
+      const h = user.hirer as any;
+      this.company = {
+        name: h.companyName,
+        tagline: h.tagline || '',
+        logo: h.logo || '',
+        bannerImage: h.bannerImage || '',
+        industry: h.industry,
+        companySize: h.companySize || '',
+        location: h.location,
+        website: h.website || '',
+        companyEmail: h.companyEmail,
+        description: h.description || '',
+        recruiterName: h.recruiterName,
+        recruiterRole: h.recruiterRole || '',
+        recruiterEmail: h.recruiterEmail,
+        recruiterPhone: h.recruiterPhone || '',
+        recruiterLinkedin: h.recruiterLinkedin || '',
+        verified: h.verified || false,
+      };
+    }
+
+    if (user.role === 'seeker' && user.seeker) {
+      const s = user.seeker as any;
+      // You can trigger profileStore update here or handle it in ProfileScreen
+    }
+
+    this.notify();
+  }
+
+  clearSession() {
+    this.token = null;
+    this.user = null;
+    this.company = null;
+    this.opportunities = [];
+    this.candidates = [];
     this.notify();
   }
 

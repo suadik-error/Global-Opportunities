@@ -16,6 +16,27 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Backend Auth
+
+Login and signup use the backend auth routes through `NEXT_PUBLIC_API_URL` in `.env`.
+
+```powershell
+cd "C:\Users\suadi\OneDrive\Desktop\Global-Opportunities\kredibble-admin"
+npm run dev
+```
+
+Default backend URL:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:4000/api
+```
+
+Seeded admin account after `npm run db:seed` in the backend:
+
+```text
+nana.adjei@kredibble.com / password123
+```
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

@@ -1,59 +1,59 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   ShieldCheck, Briefcase, Users, Building2, Hash, Flag, BarChart3,
-  Clock, CheckCircle2, XCircle, ArrowRight,
+  Clock, CheckCircle2, XCircle, ArrowRight, Loader2,
 } from "lucide-react";
-import { pendingCompanies } from "@/lib/mock-data";
-import { postedOpportunities } from "@/lib/mock-opportunities";
-import { seekerAccounts } from "@/lib/mock-seekers";
-import { hirerAccounts } from "@/lib/mock-hirers";
-import { channels } from "@/lib/mock-channels";
-import { reports } from "@/lib/mock-reports";
+import { getDashboardSummary } from "@/lib/api";
 
 export default function DashboardHomePage() {
-  const pendingVerifications = pendingCompanies.filter((c) => c.overallStatus === "pending").length;
-  const verifiedCompanies = pendingCompanies.filter((c) => c.overallStatus === "approved").length;
-  const rejectedCompanies = pendingCompanies.filter((c) => c.overallStatus === "rejected").length;
-  const pendingOpps = postedOpportunities.filter((o) => o.moderationStatus === "pending").length;
-  const flaggedChannels = channels.filter((c) => c.status === "flagged").length;
-  const openReports = reports.filter((r) => r.status === "open").length;
+  const [summary, setSummary] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    getDashboardSummary()
+      .then(setSummary)
+      .finally(() => setIsLoading(false));
+  }, []);
 
   const quickLinks = [
     {
       href: "/verification",
       icon: ShieldCheck,
       title: "Review pending verifications",
-      sub: `${pendingVerifications} compan${pendingVerifications === 1 ? "y" : "ies"} waiting on document review`,
+      sub: `${summary?.pendingVerifications || 0} compan${summary?.pendingVerifications === 1 ? "y" : "ies"} waiting on document review`,
     },
     {
       href: "/opportunities",
       icon: Briefcase,
       title: "Review posted opportunities",
-      sub: `${pendingOpps} posting${pendingOpps === 1 ? "" : "s"} awaiting moderation`,
+      sub: `${summary?.pendingOpportunities || 0} posting${summary?.pendingOpportunities === 1 ? "" : "s"} awaiting moderation`,
     },
     {
       href: "/seekers",
       icon: Users,
       title: "Seekers Directory",
-      sub: `${seekerAccounts.length} registered accounts`,
+      sub: `${summary?.activeSeekers || 0} registered accounts`,
     },
     {
       href: "/hirers",
       icon: Building2,
       title: "Hirers Directory",
-      sub: `${hirerAccounts.length} registered companies`,
+      sub: `${summary?.activeHirers || 0} registered companies`,
     },
     {
       href: "/community",
       icon: Hash,
       title: "Community Channels",
-      sub: `${flaggedChannels} flagged channel${flaggedChannels === 1 ? "" : "s"}`,
+      sub: `Manage platform groups`,
     },
     {
       href: "/reports",
       icon: Flag,
       title: "Reports Queue",
-      sub: `${openReports} open report${openReports === 1 ? "" : "s"}`,
+      sub: `${summary?.openReports || 0} open report${summary?.openReports === 1 ? "" : "s"}`,
     },
     {
       href: "/analytics",
@@ -63,17 +63,25 @@ export default function DashboardHomePage() {
     },
   ];
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-kb-primary" />
+      </div>
+    );
+  }
+
   return (
     <div>
       <h1 className="text-xl font-bold text-kb-text-body mb-1">Dashboard</h1>
       <p className="text-sm text-kb-text-muted mb-6">
-        Platform overview. More sections (content, taxonomy, events/grants, notifications, staff) are on the roadmap — see the sidebar.
+        Real-time platform overview fetched from the live database.
       </p>
 
       <div className="grid grid-cols-3 gap-4 mb-8">
-        <StatCard icon={Clock} label="Pending Verification" value={pendingVerifications} color="#F6B612" />
-        <StatCard icon={CheckCircle2} label="Verified Companies" value={verifiedCompanies} color="#16A34A" />
-        <StatCard icon={XCircle} label="Rejected Companies" value={rejectedCompanies} color="#ED4C5C" />
+        <StatCard icon={Clock} label="Pending Verification" value={summary?.pendingVerifications || 0} color="#F6B612" />
+        <StatCard icon={CheckCircle2} label="Active Seekers" value={summary?.activeSeekers || 0} color="#16A34A" />
+        <StatCard icon={Building2} label="Active Hirers" value={summary?.activeHirers || 0} color="#6671E4" />
       </div>
 
       <div className="grid grid-cols-2 gap-3">

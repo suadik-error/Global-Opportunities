@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Settings, Bookmark, Target, Bell, Shield, LogOut, ChevronRight, Check } from 'lucide-react-native';
 import { profileStore } from '../../constants/mockProfile';
 import { authStore } from '../../constants/authStore';
+import { getMe } from '../../lib/api';
 
 // Reuse LogoSVG from index
 const LogoSVG = () => (
@@ -18,8 +19,8 @@ const LogoSVG = () => (
 export default function ProfileScreen() {
   const router = useRouter();
   
-  // Seeker profile store
-  const [user, setUser] = useState(profileStore.user);
+  // Seeker profile states from authStore
+  const [authUser, setAuthUser] = useState(authStore.user);
   const [logoutVisible, setLogoutVisible] = useState(false);
 
   // Hirer global auth store states
@@ -27,33 +28,39 @@ export default function ProfileScreen() {
   const [company, setCompany] = useState(authStore.company);
 
   useEffect(() => {
-    // Seeker profile sub
-    const unsubscribeSeeker = profileStore.subscribe(() => {
-      setUser({ ...profileStore.user });
-    });
+    const fetchProfile = async () => {
+      try {
+        const userData = await getMe();
+        authStore.setSession(authStore.token!, userData);
+      } catch (err) {
+        console.error('Failed to refresh profile:', err);
+      }
+    };
 
-    // Hirer profile sub
+    if (authStore.token) {
+      fetchProfile();
+    }
+
     setRole(authStore.role);
-    setCompany({ ...authStore.company });
-    const unsubscribeHirer = authStore.subscribe(() => {
+    setCompany(authStore.company ? { ...authStore.company } : null);
+    setAuthUser(authStore.user);
+
+    const unsubscribe = authStore.subscribe(() => {
       setRole(authStore.role);
-      setCompany({ ...authStore.company });
+      setCompany(authStore.company ? { ...authStore.company } : null);
+      setAuthUser(authStore.user);
     });
 
     return () => {
-      unsubscribeSeeker();
-      unsubscribeHirer();
+      unsubscribe();
     };
   }, []);
 
   const handleLogout = () => {
     setLogoutVisible(false);
-    if (role === 'hirer') {
-      authStore.setRole('seeker'); // Revert role
-    } else {
-      profileStore.logout();
-    }
-    router.replace('/login');
+    authStore.clearSession();
+    profileStore.logout();
+    router.replace('/(auth)/login');
   };
 
   if (role === 'hirer') {
@@ -68,21 +75,29 @@ export default function ProfileScreen() {
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {/* Banner & Logo */}
-          <View style={{ borderRadius: 16, overflow: 'hidden', backgroundColor: '#FFFFFF', marginBottom: 24, borderWidth: 1, borderColor: '#E5E6F2' }}>
-            <Image source={{ uri: company.bannerImage }} style={{ height: 100, width: '100%' }} />
-            
-            <View style={{ padding: 16, alignItems: 'center', marginTop: -40 }}>
-              <Image source={{ uri: company.logo }} style={{ width: 80, height: 80, borderRadius: 20, borderWidth: 3, borderColor: '#FFFFFF', backgroundColor: '#FFFFFF' }} />
+          {company ? (
+            <View style={{ borderRadius: 16, overflow: 'hidden', backgroundColor: '#FFFFFF', marginBottom: 24, borderWidth: 1, borderColor: '#E5E6F2' }}>
+              <Image source={{ uri: company.bannerImage || 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800' }} style={{ height: 100, width: '100%' }} />
               
-              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#DCFCE7', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, marginTop: 8 }}>
-                <Check size={12} color="#16A34A" strokeWidth={3} style={{ marginRight: 4 }} />
-                <Text style={{ fontSize: 10, color: '#16A34A', fontWeight: 'bold' }} className="font-sans">Verified Enterprise</Text>
-              </View>
+              <View style={{ padding: 16, alignItems: 'center', marginTop: -40 }}>
+                <Image source={{ uri: company.logo || 'https://via.placeholder.com/150' }} style={{ width: 80, height: 80, borderRadius: 20, borderWidth: 3, borderColor: '#FFFFFF', backgroundColor: '#FFFFFF' }} />
 
-              <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1A1A1A', marginTop: 8 }} className="font-sans">{company.recruiterName}</Text>
-              <Text style={{ fontSize: 12, color: '#8A8D9F', marginTop: 2 }} className="font-sans">{company.recruiterRole} • {company.name}</Text>
+                {company.verified && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#DCFCE7', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4, marginTop: 8 }}>
+                    <Check size={12} color="#16A34A" strokeWidth={3} style={{ marginRight: 4 }} />
+                    <Text style={{ fontSize: 10, color: '#16A34A', fontWeight: 'bold' }} className="font-sans">Verified Enterprise</Text>
+                  </View>
+                )}
+
+                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1A1A1A', marginTop: 8 }} className="font-sans">{company.recruiterName}</Text>
+                <Text style={{ fontSize: 12, color: '#8A8D9F', marginTop: 2 }} className="font-sans">{company.recruiterRole} • {company.name}</Text>
+              </View>
             </View>
-          </View>
+          ) : (
+            <View style={{ height: 200, justifyContent: 'center', alignItems: 'center' }}>
+              <Text className="font-sans text-[#8A8D9F]">Loading profile...</Text>
+            </View>
+          )}
 
           {/* Quick Info Menu Card */}
           <View style={styles.menuCard}>
@@ -248,17 +263,17 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* User Card */}
         <View style={styles.userContainer}>
-          <Image source={{ uri: user.image }} style={styles.avatar} />
+          <Image source={{ uri: authUser?.avatarUrl || 'https://via.placeholder.com/150' }} style={styles.avatar} />
           
-          {user.verified && (
+          {(authUser?.seeker as any)?.verified && (
             <View style={styles.verifiedBadge}>
               <Check size={12} color="#16A34A" strokeWidth={3} style={{ marginRight: 4 }} />
               <Text style={styles.verifiedText} className="font-sans">Verified</Text>
             </View>
           )}
 
-          <Text style={styles.userName} className="font-sans">{user.name}</Text>
-          <Text style={styles.userProfession} className="font-sans">{user.profession}</Text>
+          <Text style={styles.userName} className="font-sans">{authUser?.name || 'User'}</Text>
+          <Text style={styles.userProfession} className="font-sans">{(authUser?.seeker as any)?.profession || 'Opportunity Seeker'}</Text>
         </View>
 
         {/* Menu Card 1 */}

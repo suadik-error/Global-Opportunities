@@ -1,24 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Briefcase, GraduationCap, CalendarDays, HandCoins } from "lucide-react";
-import { postedOpportunities, type ModerationStatus, type OpportunityType } from "@/lib/mock-opportunities";
+import { ChevronRight, Briefcase, GraduationCap, CalendarDays, HandCoins, Loader2 } from "lucide-react";
+import { getOpportunities } from "@/lib/api";
 
-const STATUS_STYLES: Record<ModerationStatus, { bg: string; text: string; label: string }> = {
+const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
   pending: { bg: "#FFFBEB", text: "#B7791F", label: "Pending" },
   approved: { bg: "#F0FDF4", text: "#16A34A", label: "Approved" },
   rejected: { bg: "#FEF2F2", text: "#ED4C5C", label: "Rejected" },
 };
 
-const TYPE_META: Record<OpportunityType, { label: string; icon: typeof Briefcase; color: string }> = {
+const TYPE_META: Record<string, { label: string; icon: any; color: string }> = {
   jobs: { label: "Job", icon: Briefcase, color: "#6671E4" },
   internships: { label: "Internship", icon: GraduationCap, color: "#F59E0B" },
   events: { label: "Event", icon: CalendarDays, color: "#10B981" },
   grants: { label: "Grant", icon: HandCoins, color: "#EF4444" },
 };
 
-const FILTERS: { label: string; value: OpportunityType | "all" }[] = [
+const FILTERS: { label: string; value: string | "all" }[] = [
   { label: "All", value: "all" },
   { label: "Jobs", value: "jobs" },
   { label: "Internships", value: "internships" },
@@ -27,12 +27,21 @@ const FILTERS: { label: string; value: OpportunityType | "all" }[] = [
 ];
 
 export default function OpportunitiesQueuePage() {
-  const [filter, setFilter] = useState<OpportunityType | "all">("all");
+  const [filter, setFilter] = useState<string | "all">("all");
+  const [opportunities, setOpportunities] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(true);
+    getOpportunities()
+      .then(setOpportunities)
+      .finally(() => setIsLoading(false));
+  }, []);
 
   const filtered =
-    filter === "all" ? postedOpportunities : postedOpportunities.filter((o) => o.type === filter);
+    filter === "all" ? opportunities : opportunities.filter((o) => o.type === filter);
 
-  const pendingCount = postedOpportunities.filter((o) => o.moderationStatus === "pending").length;
+  const pendingCount = opportunities.filter((o) => o.moderationStatus === "pending").length;
 
   return (
     <div>
@@ -67,41 +76,47 @@ export default function OpportunitiesQueuePage() {
           <span />
         </div>
 
-        {filtered.map((opp) => {
-          const type = TYPE_META[opp.type];
-          const status = STATUS_STYLES[opp.moderationStatus];
-          const Icon = type.icon;
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-kb-primary" />
+          </div>
+        ) : (
+          filtered.map((opp) => {
+            const type = TYPE_META[opp.type] || TYPE_META.jobs;
+            const status = STATUS_STYLES[opp.moderationStatus] || STATUS_STYLES.pending;
+            const Icon = type.icon;
 
-          return (
-            <Link
-              key={opp.id}
-              href={`/opportunities/${opp.id}`}
-              className="grid grid-cols-[2fr_1.3fr_1fr_1fr_1fr_20px] gap-4 px-5 py-4 items-center border-b border-kb-border last:border-b-0 hover:bg-kb-bg-alt transition-colors"
-            >
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-kb-text-body truncate" title={opp.title}>
-                  {opp.title}
-                </p>
-                <p className="text-xs text-kb-text-muted mt-0.5">{opp.applicantsCount} applied</p>
-              </div>
-              <span className="text-sm text-kb-text-muted truncate">{opp.company}</span>
-              <span className="flex items-center gap-1.5 text-sm text-kb-text-muted w-fit min-w-0">
-                <Icon size={14} color={type.color} className="shrink-0" />
-                <span className="truncate">{type.label}</span>
-              </span>
-              <span className="text-sm text-kb-text-muted truncate">{opp.date}</span>
-              <span
-                className="inline-flex w-fit text-xs font-semibold rounded-full px-2.5 py-1"
-                style={{ backgroundColor: status.bg, color: status.text }}
+            return (
+              <Link
+                key={opp.id}
+                href={`/opportunities/${opp.id}`}
+                className="grid grid-cols-[2fr_1.3fr_1fr_1fr_1fr_20px] gap-4 px-5 py-4 items-center border-b border-kb-border last:border-b-0 hover:bg-kb-bg-alt transition-colors"
               >
-                {status.label}
-              </span>
-              <ChevronRight size={18} className="text-kb-text-placeholder justify-self-end" />
-            </Link>
-          );
-        })}
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-kb-text-body truncate" title={opp.title}>
+                    {opp.title}
+                  </p>
+                  <p className="text-xs text-kb-text-muted mt-0.5">{opp.applicantsCount} applied</p>
+                </div>
+                <span className="text-sm text-kb-text-muted truncate">{opp.company}</span>
+                <span className="flex items-center gap-1.5 text-sm text-kb-text-muted w-fit min-w-0">
+                  <Icon size={14} color={type.color} className="shrink-0" />
+                  <span className="truncate">{type.label}</span>
+                </span>
+                <span className="text-sm text-kb-text-muted truncate">{opp.date}</span>
+                <span
+                  className="inline-flex w-fit text-xs font-semibold rounded-full px-2.5 py-1"
+                  style={{ backgroundColor: status.bg, color: status.text }}
+                >
+                  {status.label}
+                </span>
+                <ChevronRight size={18} className="text-kb-text-placeholder justify-self-end" />
+              </Link>
+            );
+          })
+        )}
 
-        {filtered.length === 0 && (
+        {!isLoading && filtered.length === 0 && (
           <div className="px-5 py-10 text-center text-sm text-kb-text-muted">
             No opportunities in this category.
           </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, useWindowDimensions, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, useWindowDimensions, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, Target, Compass, Users, Check, Clock, TrendingUp, Sparkles, Building, Bell } from 'lucide-react-native';
 import Svg, { G, Rect, Defs, ClipPath, RadialGradient, Stop, Ellipse } from 'react-native-svg';
@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { authStore } from '../../constants/authStore';
 import { notificationStore } from '../../constants/mockNotifications';
 import { Colors, FontSize, FontWeight, Radius, Shadow } from '../../constants/design';
+import { getOpportunities, getDashboardSummary } from '../../lib/api';
 
 // ─── Logo ─────────────────────────────────────────────────────────────────────
 
@@ -123,15 +124,38 @@ export default function HomeScreen() {
   const [company, setCompany] = useState(authStore.company);
   const [opps, setOpps] = useState(authStore.opportunities);
   const [unreadNotifications, setUnreadNotifications] = useState(notificationStore.unreadCount);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        if (authStore.role === 'seeker') {
+          const data = await getOpportunities();
+          authStore.setOpportunities(data);
+        } else {
+          // Hirer needs dashboard summary
+          // const summary = await getDashboardSummary();
+          // For now, let's just fetch opportunities to show counts
+          const data = await getOpportunities();
+          authStore.setOpportunities(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch home data:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+
     setRole(authStore.role);
-    setCompany({ ...authStore.company });
+    setCompany(authStore.company ? { ...authStore.company } : null);
     setOpps([...authStore.opportunities]);
 
     const unsubscribe = authStore.subscribe(() => {
       setRole(authStore.role);
-      setCompany({ ...authStore.company });
+      setCompany(authStore.company ? { ...authStore.company } : null);
       setOpps([...authStore.opportunities]);
     });
     const unsubscribeNotifications = notificationStore.subscribe(() => {
@@ -209,8 +233,14 @@ export default function HomeScreen() {
         </View>
 
         <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
+          {isLoading && (
+            <ActivityIndicator size="small" color="#6671E4" style={{ marginTop: 20 }} />
+          )}
+
           {/* Analytics Section */}
-          <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#1A1A1A', marginBottom: 12, marginTop: 8 }} className="font-sans">Dashboard Analytics</Text>
+          <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#1A1A1A', marginBottom: 12, marginTop: 8 }} className="font-sans">
+            {company?.name || 'Dashboard'} Analytics
+          </Text>
 
           <View style={{ flexDirection: 'row', gap: 16, marginBottom: 16 }}>
             {/* Card 1 — Active Posts */}

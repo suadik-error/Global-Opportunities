@@ -1,0 +1,16 @@
+services:
+  db:
+    image: mongo:7
+    container_name: kredibble-local-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_ROOT_USERNAME:?Set MONGODB_ROOT_USERNAME in kredibble-backend/.env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_ROOT_PASSWORD:?Set MONGODB_ROOT_PASSWORD in kredibble-backend/.env}
+      MONGO_INITDB_DATABASE: ${MONGODB_DATABASE:-kredibble}
+    ports:
+      - "${MONGODB_PORT:-27017}:27017"
+    volumes:
+      - kredibble_mongodb_data:/data/db
+
+volumes:
+  kredibble_mongodb_data:

@@ -5,4 +5,17 @@ const { withNativeWind } = require("nativewind/metro");
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
 
-module.exports = withNativeWind(config, { input: "./src/global.css" });
+config.resolver.blockList = [
+  /.*[\\\/]\.git[\\\/].*/,
+  /.*[\\\/]\.expo[\\\/].*/,
+];
+config.watcher = {
+  ...config.watcher,
+  useWatchman: false,
+  unstable_usePolling: true,
+};
+
+module.exports = withNativeWind(config, {
+  input: "./src/global.css",
+  forceWriteFileSystem: true,
+});

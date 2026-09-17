@@ -14,10 +14,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Eye, EyeOff, ChevronDown, ChevronLeft, Search, Upload, Check } from 'lucide-react-native';
-import Svg, { G, Rect, Defs, ClipPath } from 'react-native-svg';
+import { Eye, EyeOff, ChevronDown, ChevronLeft, Search, Upload, Check, Home } from 'lucid-react-native';
+import Svg, { G, Rect, Devs, ClipPath } from 'react-native-svg';
 import { authStore } from '../../constants/authStore';
 import { profileStore } from '../../constants/mockProfile';
+import { signupMobile } from '../../lib/api';
 
 type Country = { name: string; code: string; dialCode: string };
 type PickerType =
@@ -95,10 +96,10 @@ const COUNTRIES: Country[] = [
 ];
 
 const UNIVERSITIES = [
-  'Ashesi University', 'Cairo University', 'Cambridge University',
+  'Ashe University', 'Cairo University', 'Cambridge University',
   'Columbia University', 'Harvard University', 'Johns Hopkins University',
   'Kwame Nkrumah University of Science and Technology',
-  'London School of Economics', 'Makerere University', 'MIT',
+  'London School of Economics', 'Maker University', 'MIT',
   'National University of Singapore', 'Oxford University', 'Princeton University',
   'Stanford University', 'University of Cape Town', 'University of Ghana',
   'University of Lagos', 'University of Nairobi', 'University of Sydney',
@@ -412,6 +413,8 @@ export default function SignupScreen() {
   const [docOrgIdStatus, setDocOrgIdStatus] = useState<'idle' | 'loading' | 'done'>('idle');
   const [docCompanyLogoStatus, setDocCompanyLogoStatus] = useState<'idle' | 'loading' | 'done'>('idle');
   const [docProofOfOrgStatus, setDocProofOfOrgStatus] = useState<'idle' | 'loading' | 'done'>('idle');
+  const [authError, setAuthError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Picker sheet
   const [activePicker, setActivePicker] = useState<PickerType>(null);
@@ -594,6 +597,85 @@ export default function SignupScreen() {
     }
   };
 
+  const handleCreateAccount = async () => {
+    setAuthError('');
+    setIsSubmitting(true);
+
+    try {
+      const session =
+        role === 'hirer'
+          ? await signupMobile({
+              name: recruiterName.trim(),
+              email: recruiterEmail.trim(),
+              password: recruiterPassword,
+              role: 'hirer',
+              companyName: companyName.trim(),
+              industry: selectedIndustry,
+              location: selectedCompanyCountry?.name ?? '',
+              website: companyWebsite.trim(),
+              companySize: selectedCompanySize,
+              companyEmail: companyEmail.trim(),
+              recruiterRole: recruiterPosition,
+              recruiterPhone,
+              recruiterLinkedin,
+            })
+          : await signupMobile({
+              name: fullName.trim(),
+              email: email.trim(),
+              password,
+              role: 'seeker',
+              profession: careerInterest || 'Opportunity Seeker',
+              university,
+              country: selectedCountry?.name ?? '',
+              city: selectedCountry?.name ?? '',
+              phone,
+              technicalSkills: selectedSkills,
+            });
+
+      authStore.setSession(session.token, session.user);
+      authStore.setRole(role);
+
+      if (role === 'hirer') {
+        authStore.updateCompany({
+          name: companyName,
+          companyEmail,
+          website: companyWebsite,
+          industry: selectedIndustry,
+          companySize: selectedCompanySize,
+          location: selectedCompanyCountry?.name ?? '',
+          recruiterName,
+          recruiterRole: recruiterPosition,
+          recruiterEmail,
+          recruiterPhone,
+          recruiterLinkedin,
+        });
+        authStore.updateVerificationDoc('businessReg', docBusinessRegStatus);
+        authStore.updateVerificationDoc('orgId', docOrgIdStatus);
+        authStore.updateVerificationDoc('companyLogo', docCompanyLogoStatus);
+        authStore.updateVerificationDoc('proofOfOrg', docProofOfOrgStatus);
+      } else {
+        profileStore.updateProfile({
+          name: fullName,
+          email,
+          phone,
+          location: selectedCountry?.name ?? '',
+          country: selectedCountry?.name ?? '',
+          profession: careerInterest,
+          technicalSkills: selectedSkills,
+          education: [
+            { degree: program, institution: university, duration: graduationYear },
+          ],
+        });
+      }
+
+      router.replace('/(auth)/loading');
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Unable to create account');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // ─── Role card ───────────────────────────────────────────────────────────────
 
   const RoleCard = ({ value, label }: { value: 'seeker' | 'hirer'; label: string }) => {
@@ -630,6 +712,35 @@ export default function SignupScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F7F9' }} edges={['top', 'left', 'right']}>
+      {/* Header with Home directional access */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          paddingHorizontal: 24,
+          paddingVertical: 12,
+          backgroundColor: '#F7F7F9',
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => router.replace('/(tabs)')}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: 'rgba(102, 113, 228, 0.1)',
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 20,
+            gap: 6,
+          }}
+        >
+          <Home size={16} color="#6671E4" />
+          <Text style={{ fontSize: 13, color: '#6671E4', fontWeight: '600' }} className="font-sans">
+            Home
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Progress bar */}
       <View style={{ height: 4, backgroundColor: '#E5E6F2' }}>
@@ -1000,6 +1111,12 @@ export default function SignupScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
+      {authError ? (
+        <Text style={{ paddingHorizontal: 24, color: '#ED4C5C', fontSize: 13 }} className="font-sans">
+          {authError}
+        </Text>
+      ) : null}
+
       {/* Fixed bottom buttons */}
       <View
         style={{
@@ -1019,58 +1136,23 @@ export default function SignupScreen() {
           </TouchableOpacity>
         )}
         <TouchableOpacity
-          disabled={!isNextActive}
-          onPress={() => {
+          disabled={!isNextActive || isSubmitting}
+          onPress={async () => {
             if (step < totalSteps) {
               setStep(s => s + 1);
               return;
             }
 
-            authStore.setRole(role);
-
-            if (role === 'hirer') {
-              authStore.updateCompany({
-                name: companyName,
-                companyEmail,
-                website: companyWebsite,
-                industry: selectedIndustry,
-                companySize: selectedCompanySize,
-                location: selectedCompanyCountry?.name ?? '',
-                recruiterName,
-                recruiterRole: recruiterPosition,
-                recruiterEmail,
-                recruiterPhone,
-                recruiterLinkedin,
-              });
-              authStore.updateVerificationDoc('businessReg', docBusinessRegStatus);
-              authStore.updateVerificationDoc('orgId', docOrgIdStatus);
-              authStore.updateVerificationDoc('companyLogo', docCompanyLogoStatus);
-              authStore.updateVerificationDoc('proofOfOrg', docProofOfOrgStatus);
-            } else {
-              profileStore.updateProfile({
-                name: fullName,
-                email,
-                phone,
-                location: selectedCountry?.name ?? '',
-                country: selectedCountry?.name ?? '',
-                profession: careerInterest,
-                technicalSkills: selectedSkills,
-                education: [
-                  { degree: program, institution: university, duration: graduationYear },
-                ],
-              });
-            }
-
-            router.replace('/(auth)/loading');
+            await handleCreateAccount();
           }}
           style={{
             flex: 1, height: 52, borderRadius: 12,
             justifyContent: 'center', alignItems: 'center',
-            backgroundColor: isNextActive ? '#6671E4' : '#C5C9F0',
+            backgroundColor: isNextActive && !isSubmitting ? '#6671E4' : '#C5C9F0',
           }}
         >
           <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#FFFFFF' }} className="font-sans">
-            {step === totalSteps ? 'Done' : 'Next'}
+            {isSubmitting ? 'Creating account...' : step === totalSteps ? 'Done' : 'Next'}
           </Text>
         </TouchableOpacity>
       </View>

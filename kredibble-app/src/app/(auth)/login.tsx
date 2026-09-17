@@ -13,9 +13,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Check, X, Eye, EyeOff } from 'lucide-react-native';
-import Svg, { G, Rect, Defs, ClipPath, Path } from 'react-native-svg';
+import { Check, X, Eye, EyeOff, Home } from 'lucid-react-native';
+import Svg, { G, Rect, Devs, ClipPath, Path } from 'react-native-svg';
 import { authStore } from '../../constants/authStore';
+import { loginMobile } from '../../lib/api';
 
 const LogoSVG = () => (
   <Image 
@@ -36,11 +37,11 @@ const SuccessBadge = () => (
         fill="#6671E4"
       />
     </G>
-    <Defs>
+    <Devs>
       <ClipPath id="clip_badge">
         <Rect width="70" height="70" fill="white" />
       </ClipPath>
-    </Defs>
+    </Devs>
   </Svg>
 );
 
@@ -54,6 +55,8 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [role, setRole] = useState<'seeker' | 'hirer'>('seeker');
+  const [authError, setAuthError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [showForgotSheet, setShowForgotSheet] = useState(false);
   const [forgotStep, setForgotStep] = useState<'email' | 'verify' | 'reset' | 'success'>('email');
@@ -132,9 +135,57 @@ export default function LoginScreen() {
     { label: 'symbol',           met: /[^A-Za-z0-9]/.test(newPassword) },
   ];
   const isResetActive = passwordRules.every(r => r.met) && newPassword === confirmPassword;
+  const isLoginActive = email.trim().length > 0 && password.trim().length > 0 && !isSubmitting;
+
+  const handleLogin = async () => {
+    if (!isLoginActive) return;
+
+    setAuthError('');
+    setIsSubmitting(true);
+    try {
+      const session = await loginMobile(email.trim(), password);
+      const backendRole = session.user.role === 'hirer' ? 'hirer' : 'seeker';
+      authStore.setSession(session.token, session.user);
+      authStore.setRole(backendRole);
+      router.replace('/(tabs)');
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Unable to sign in');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F7F9' }}>
+      {/* Header with Home directional access */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          paddingHorizontal: 24,
+          paddingVertical: 12,
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => router.replace('/(tabs)')}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: 'rgba(102, 113, 228, 0.1)',
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 20,
+            gap: 6,
+          }}
+        >
+          <Home size={16} color="#6671E4" />
+          <Text style={{ fontSize: 13, color: '#6671E4', fontWeight: '600' }} className="font-sans">
+            Home
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       {/* ── Login form ── */}
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -289,21 +340,25 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
+          {authError ? (
+            <Text style={{ fontSize: 13, color: '#ED4C5C', marginBottom: 12 }} className="font-sans">
+              {authError}
+            </Text>
+          ) : null}
+
           {/* Login Button */}
           <TouchableOpacity
-            onPress={() => {
-              authStore.setRole(role);
-              router.replace('/(tabs)');
-            }}
+            disabled={!isLoginActive}
+            onPress={handleLogin}
             style={{
-              height: 48, backgroundColor: '#6671E4', borderRadius: 8,
+              height: 48, backgroundColor: isLoginActive ? '#6671E4' : '#C5C9F0', borderRadius: 8,
               justifyContent: 'center', alignItems: 'center', marginBottom: 18,
               shadowColor: '#6671E4', shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.2, shadowRadius: 8, elevation: 4,
             }}
           >
             <Text style={{ fontSize: 15, color: '#FFFFFF', fontWeight: 'bold' }} className="font-sans">
-              Login
+              {isSubmitting ? 'Logging in...' : 'Login'}
             </Text>
           </TouchableOpacity>
 

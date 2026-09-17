@@ -2,20 +2,33 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { loginAdmin } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isValid = email.trim().length > 0 && password.trim().length > 0;
+  const isValid = email.trim().length > 0 && password.trim().length > 0 && !isSubmitting;
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid) return;
-    // No backend yet — any credentials "log in" to the mock dashboard.
-    router.push("/");
+
+    setError("");
+    setIsSubmitting(true);
+    try {
+      await loginAdmin(email.trim(), password);
+      router.push("/");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to sign in");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -53,13 +66,26 @@ export default function LoginPage() {
             />
           </div>
 
+          {error && (
+            <p className="mb-4 rounded-lg border border-kb-error/20 bg-kb-error/10 px-3 py-2 text-sm text-kb-error">
+              {error}
+            </p>
+          )}
+
           <button
             type="submit"
             disabled={!isValid}
             className="w-full h-11 rounded-lg bg-kb-primary text-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
           >
-            Sign in
+            {isSubmitting ? "Signing in..." : "Sign in"}
           </button>
+
+          <p className="mt-4 text-center text-sm text-kb-text-muted">
+            Need an admin account?{" "}
+            <Link href="/signup" className="font-semibold text-kb-primary">
+              Create one
+            </Link>
+          </p>
         </form>
       </div>
     </div>
