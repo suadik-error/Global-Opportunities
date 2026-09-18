@@ -3,10 +3,24 @@ import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { env } from './config/env.js';
+import { connectToDatabase } from './lib/mongodb.js';
 import { apiRouter } from './routes/index.js';
 import { ApiError } from './utils/http.js';
 
-export const app = express();
+const app = express();
+
+// Ensure DB connection for serverless environments (Vercel)
+app.use(async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    next();
+  } catch (error) {
+    next(new ApiError(503, `Database connection failed: ${error.message}`));
+  }
+});
+
+export { app };
+export default app;
 
 const localDevOriginPattern =
   /^https?:\/\/(localhost|127\.0\.0\.1|10\.0\.2\.2|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?$/;
