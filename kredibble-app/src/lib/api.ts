@@ -53,7 +53,8 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   const payload = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(payload?.error?.message || 'Request failed');
+    const errorMsg = payload?.error?.message || `Request failed with status ${response.status}`;
+    throw new Error(errorMsg);
   }
 
   return payload.data as T;

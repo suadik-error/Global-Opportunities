@@ -4,7 +4,13 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const uri = process.env.DATABASE_URL;
-const client = new MongoClient(uri);
+const client = new MongoClient(uri, {
+  serverSelectionTimeoutMS: 5000,
+  connectTimeoutMS: 10000,
+  // Added for serverless stability
+  maxPoolSize: 1,
+  minPoolSize: 0,
+});
 
 let db;
 let lastError = null;

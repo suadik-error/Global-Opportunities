@@ -9,19 +9,6 @@ import { ApiError } from './utils/http.js';
 
 const app = express();
 
-// Ensure DB connection for serverless environments (Vercel)
-app.use(async (req, res, next) => {
-  try {
-    await connectToDatabase();
-    next();
-  } catch (error) {
-    next(new ApiError(503, `Database connection failed: ${error.message}`));
-  }
-});
-
-export { app };
-export default app;
-
 const localDevOriginPattern =
   /^https?:\/\/(localhost|127\.0\.0\.1|10\.0\.2\.2|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?$/;
 
@@ -29,11 +16,11 @@ const isAllowedOrigin = (origin) => {
   if (!origin) return true;
   if (env.corsOrigins.includes(origin)) return true;
   if (env.isDevelopment && localDevOriginPattern.test(origin)) return true;
-  // Allow all Vercel and Render subdomains in production for easier deployment
   if (origin.endsWith('.vercel.app') || origin.endsWith('.onrender.com')) return true;
   return false;
 };
 
+// 1. Basic security and CORS (Must be at the top)
 app.use(helmet());
 app.use(
   cors({
@@ -47,6 +34,17 @@ app.use(
     credentials: true,
   }),
 );
+
+// 2. Ensure DB connection for serverless environments
+app.use(async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    next();
+  } catch (error) {
+    next(new ApiError(503, `Service Unavailable: Database connection failed. ${error.message}`));
+  }
+});
+
 app.use(express.json({ limit: '1mb' }));
 app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
 
@@ -65,8 +63,11 @@ app.use((err, req, res, next) => {
   const status = err.status || 500;
   res.status(status).json({
     error: {
-      message: env.isDevelopment ? err.message : (status === 500 ? 'Internal server error' : err.message),
+      message: err.message || 'Internal server error',
       stack: env.isDevelopment ? err.stack : undefined,
     },
   });
 });
+
+export { app };
+export default app;
