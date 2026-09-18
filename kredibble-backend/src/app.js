@@ -11,10 +11,14 @@ export const app = express();
 const localDevOriginPattern =
   /^https?:\/\/(localhost|127\.0\.0\.1|10\.0\.2\.2|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?$/;
 
-const isAllowedOrigin = (origin) =>
-  !origin ||
-  env.corsOrigins.includes(origin) ||
-  (env.isDevelopment && localDevOriginPattern.test(origin));
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+  if (env.corsOrigins.includes(origin)) return true;
+  if (env.isDevelopment && localDevOriginPattern.test(origin)) return true;
+  // Allow all Vercel and Render subdomains in production for easier deployment
+  if (origin.endsWith('.vercel.app') || origin.endsWith('.onrender.com')) return true;
+  return false;
+};
 
 app.use(helmet());
 app.use(
