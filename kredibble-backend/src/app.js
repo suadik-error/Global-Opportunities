@@ -48,7 +48,22 @@ app.use(async (req, res, next) => {
 app.use(express.json({ limit: '1mb' }));
 app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
 
+// Add simple URL logging for debugging production 404s
+app.use((req, res, next) => {
+  if (!env.isDevelopment) {
+    console.log(`[Vercel] ${req.method} ${req.url}`);
+  }
+  next();
+});
+
+// 3. Routes
+app.get('/', (req, res) => {
+  res.json({ message: 'Kredibble API is running', env: env.nodeEnv });
+});
+
 app.use('/api', apiRouter);
+// Fallback for calls missing the /api prefix
+app.use('/', apiRouter);
 
 app.use((req, res) => {
   res.status(404).json({ error: { message: 'Route not found' } });
