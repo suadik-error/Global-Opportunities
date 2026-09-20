@@ -2,8 +2,10 @@ import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import { ApiError } from '../utils/http.js';
 
-export const signToken = (user) =>
-  jwt.sign({ sub: user.id, role: user.role, email: user.email }, env.jwtSecret, { expiresIn: '7d' });
+export const signToken = (user) => {
+  const userId = user.id || user._id;
+  return jwt.sign({ sub: userId, role: user.role, email: user.email }, env.jwtSecret, { expiresIn: '7d' });
+};
 
 export const requireAuth = (req, res, next) => {
   const header = req.get('authorization');
