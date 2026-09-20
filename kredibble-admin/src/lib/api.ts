@@ -12,8 +12,19 @@ type AuthResponse = {
   token: string;
 };
 
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:4000/api";
+const getApiUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!envUrl) return "http://localhost:4000/api";
+
+  // Ensure the URL starts with https:// if it's a vercel/render domain
+  if (envUrl.includes(".") && !envUrl.startsWith("http")) {
+    return `https://${envUrl.replace(/\/$/, "")}`;
+  }
+
+  return envUrl.replace(/\/$/, "");
+};
+
+export const API_BASE_URL = getApiUrl();
 
 const TOKEN_KEY = "kredibble_admin_token";
 const USER_KEY = "kredibble_admin_user";

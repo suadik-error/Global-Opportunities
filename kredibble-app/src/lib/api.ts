@@ -22,8 +22,18 @@ const fallbackApiUrl = Platform.select({
   default: 'http://localhost:4000/api',
 });
 
-export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, '') || fallbackApiUrl || 'http://localhost:4000/api';
+const getApiUrl = () => {
+  const envUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (!envUrl) return fallbackApiUrl || 'http://localhost:4000/api';
+
+  if (envUrl.includes('.') && !envUrl.startsWith('http')) {
+    return `https://${envUrl.replace(/\/$/, '')}`;
+  }
+
+  return envUrl.replace(/\/$/, '');
+};
+
+export const API_BASE_URL = getApiUrl();
 
 const TOKEN_KEY = 'kredibble_app_token';
 const USER_KEY = 'kredibble_app_user';
