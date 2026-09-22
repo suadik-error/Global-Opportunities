@@ -1,18 +1,18 @@
 import bcrypt from 'bcryptjs';
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
-import { v4 as uuidv4 } from 'uuid';
-import { collections } from '../lib/mongodb.js';
 import { requireAuth, signToken } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { loginSchema, registerSchema } from '../schemas/auth.js';
 import { ApiError, asyncHandler, itemResponse } from '../utils/http.js';
+import { User } from '../models/User.js';
+import { SeekerProfile, HirerAccount } from '../models/Profiles.js';
 
 export const authRouter = Router();
 
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 20, // Limit each IP to 20 requests per windowMs for auth routes
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
   message: { error: { message: 'Too many requests from this IP, please try again after 15 minutes' } },
   standardHeaders: 'draft-7',
   legacyHeaders: false,
@@ -22,7 +22,8 @@ authRouter.use(authLimiter);
 
 const publicUser = (user) => {
   if (!user) return null;
-  const { passwordHash, _id, ...safeUser } = user;
+  const userObj = user.toJSON ? user.toJSON() : user;
+  const { passwordHash, _id, __v, ...safeUser } = userObj;
   return { id: _id, ...safeUser };
 };
 
@@ -32,27 +33,23 @@ authRouter.post(
   asyncHandler(async (req, res) => {
     const { name, email, password, role } = req.body;
 
-    const users = collections.users();
-    const existing = await users.findOne({ email });
-    if (existing) throw new ApiError(409, 'A user with that email already exists');
+    const existing = await User.findOne({ email });
+    if (existing) throw new ApiError(409, 'User already exists');
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const userId = uuidv4();
 
-    const userData = {
-      _id: userId,
+    const user = new User({
       name,
       email,
       role,
       passwordHash,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    });
+
+    await user.save();
 
     if (role === 'seeker') {
-      const seekerData = {
-        _id: uuidv4(),
-        userId,
+      const seeker = new SeekerProfile({
+        userId: user._id,
         profession: req.body.profession || 'Opportunity Seeker',
         university: req.body.university,
         country: req.body.country,
@@ -61,18 +58,11 @@ authRouter.post(
         technicalSkills: Array.isArray(req.body.technicalSkills)
           ? JSON.stringify(req.body.technicalSkills)
           : '[]',
-        rating: 0,
-        verified: false,
-        status: 'active',
-        applicationsCount: 0,
-        savedCount: 0,
-      };
-      await collections.seekers().insertOne(seekerData);
-      userData.seeker = seekerData;
+      });
+      await seeker.save();
     } else if (role === 'hirer') {
-      const hirerData = {
-        _id: uuidv4(),
-        userId,
+      const hirer = new HirerAccount({
+        userId: user._id,
         companyName: req.body.companyName || name,
         industry: req.body.industry || 'Not specified',
         location: req.body.location || 'Not specified',
@@ -84,19 +74,11 @@ authRouter.post(
         recruiterEmail: email,
         recruiterPhone: req.body.recruiterPhone,
         recruiterLinkedin: req.body.recruiterLinkedin,
-        verification: 'pending',
-        verified: false,
-        status: 'active',
-        postingsCount: 0,
-        publicCompanyProfile: true,
-      };
-      await collections.hirers().insertOne(hirerData);
-      userData.hirer = hirerData;
+      });
+      await hirer.save();
     }
 
-    await users.insertOne(userData);
-
-    res.status(201).json({ data: { user: publicUser(userData), token: signToken(userData) } });
+    res.status(201).json({ data: { user: publicUser(user), token: signToken(user) } });
   }),
 );
 
@@ -106,24 +88,21 @@ authRouter.post(
   asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
-    const user = await collections.users().findOne({ email });
+    const user = await User.findOne({ email });
     if (!user?.passwordHash) throw new ApiError(401, 'Invalid email or password');
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) throw new ApiError(401, 'Invalid email or password');
 
-    // Fetch related profiles if they aren't already embedded
-    if (!user.seeker && user.role === 'seeker') {
-      user.seeker = await collections.seekers().findOne({ userId: user._id });
-    }
-    if (!user.hirer && user.role === 'hirer') {
-      user.hirer = await collections.hirers().findOne({ userId: user._id });
-    }
-    if (!user.staff && user.role === 'admin') {
-      user.staff = await collections.staff().findOne({ userId: user._id });
-    }
+    // Mongoose handles population easily if defined, but for now manual fetch for exact structure
+    let profile = null;
+    if (user.role === 'seeker') profile = await SeekerProfile.findOne({ userId: user._id });
+    if (user.role === 'hirer') profile = await HirerAccount.findOne({ userId: user._id });
 
-    res.json({ data: { user: publicUser(user), token: signToken(user) } });
+    const finalUser = user.toObject();
+    finalUser[user.role] = profile;
+
+    res.json({ data: { user: publicUser(finalUser), token: signToken(user) } });
   }),
 );
 
@@ -131,19 +110,16 @@ authRouter.get(
   '/me',
   requireAuth,
   asyncHandler(async (req, res) => {
-    const user = await collections.users().findOne({ _id: req.auth.sub });
+    const user = await User.findById(req.auth.sub);
     if (!user) throw new ApiError(404, 'User not found');
 
-    if (!user.seeker && user.role === 'seeker') {
-      user.seeker = await collections.seekers().findOne({ userId: user._id });
-    }
-    if (!user.hirer && user.role === 'hirer') {
-      user.hirer = await collections.hirers().findOne({ userId: user._id });
-    }
-    if (!user.staff && user.role === 'admin') {
-      user.staff = await collections.staff().findOne({ userId: user._id });
-    }
+    let profile = null;
+    if (user.role === 'seeker') profile = await SeekerProfile.findOne({ userId: user._id });
+    if (user.role === 'hirer') profile = await HirerAccount.findOne({ userId: user._id });
 
-    itemResponse(res, publicUser(user));
+    const finalUser = user.toObject();
+    finalUser[user.role] = profile;
+
+    itemResponse(res, publicUser(finalUser));
   }),
 );

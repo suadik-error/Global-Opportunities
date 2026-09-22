@@ -1,0 +1,90 @@
+import mongoose from 'mongoose';
+
+const opportunitySchema = new mongoose.Schema({
+  hirerId: { type: mongoose.Schema.Types.ObjectId, ref: 'HirerAccount', index: true },
+  title: { type: String, required: true },
+  type: { type: String, required: true, index: true }, // jobs, internships, etc
+  company: { type: String, required: true },
+  location: { type: String, required: true },
+  description: { type: String, required: true },
+  applicantsCount: { type: Number, default: 0 },
+  date: String,
+  moderationStatus: { type: String, default: 'pending', index: true },
+  workType: String,
+  salary: String,
+  experienceLevels: { type: String, default: '[]' },
+  // Event specific
+  eventDateTime: String,
+  eventRegion: String,
+  eventCategory: String,
+  // Grant specific
+  grantBudgetRange: String,
+  grantSector: String,
+}, { timestamps: true });
+
+const applicantSchema = new mongoose.Schema({
+  opportunityId: { type: mongoose.Schema.Types.ObjectId, ref: 'Opportunity', required: true, index: true },
+  seekerId: { type: mongoose.Schema.Types.ObjectId, ref: 'SeekerProfile', index: true },
+  name: String,
+  status: { type: String, default: 'Applied' },
+  skills: { type: String, default: '[]' },
+  resumeUrl: String,
+}, { timestamps: true });
+
+const eventSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  hirer: { type: String, required: true },
+  location: { type: String, required: true },
+  dateTime: { type: String, required: true },
+  capacity: { type: Number, required: true },
+  attendeesCount: { type: Number, default: 0 },
+  status: { type: String, default: 'upcoming' },
+}, { timestamps: true });
+
+const grantSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  hirer: { type: String, required: true },
+  sector: { type: String, required: true },
+  fundingPool: { type: Number, required: true },
+  allocated: { type: Number, default: 0 },
+  status: { type: String, default: 'open' },
+}, { timestamps: true });
+
+const grantApplicationSchema = new mongoose.Schema({
+  grantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Grant', required: true, index: true },
+  applicantName: { type: String, required: true },
+  requestedAmount: { type: Number, required: true },
+  status: { type: String, default: 'pending' },
+}, { timestamps: true });
+
+const companyVerificationSchema = new mongoose.Schema({
+  hirerId: { type: mongoose.Schema.Types.ObjectId, ref: 'HirerAccount', unique: true },
+  name: { type: String, required: true },
+  industry: String,
+  companySize: String,
+  location: String,
+  website: String,
+  companyEmail: String,
+  recruiterName: String,
+  recruiterRole: String,
+  recruiterEmail: String,
+  submittedDate: String,
+  overallStatus: { type: String, default: 'pending', index: true },
+}, { timestamps: true });
+
+const verificationDocSchema = new mongoose.Schema({
+  companyId: { type: mongoose.Schema.Types.ObjectId, ref: 'HirerAccount', required: true, index: true },
+  verificationCaseId: { type: mongoose.Schema.Types.ObjectId, ref: 'CompanyVerification' },
+  key: { type: String, required: true },
+  label: String,
+  fileName: String,
+  status: { type: String, default: 'pending' },
+});
+
+export const Opportunity = mongoose.model('Opportunity', opportunitySchema);
+export const Applicant = mongoose.model('Applicant', applicantSchema);
+export const Event = mongoose.model('Event', eventSchema);
+export const Grant = mongoose.model('Grant', grantSchema);
+export const GrantApplication = mongoose.model('GrantApplication', grantApplicationSchema);
+export const CompanyVerification = mongoose.model('CompanyVerification', companyVerificationSchema);
+export const VerificationDoc = mongoose.model('VerificationDoc', verificationDocSchema);

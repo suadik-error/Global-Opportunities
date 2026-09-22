@@ -13,7 +13,7 @@ export const validate = (schema) => (req, res, next) => {
     });
 
     if (!result.success) {
-      const message = result.error.errors
+      const message = result.error.issues
         .map((err) => `${err.path.join('.')}: ${err.message}`)
         .join(', ');
       throw new ApiError(400, `Validation failed: ${message}`);

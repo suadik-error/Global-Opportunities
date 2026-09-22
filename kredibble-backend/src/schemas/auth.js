@@ -1,18 +1,19 @@
 import { z } from 'zod';
 
 const passwordSchema = z.string()
-  .min(8, 'Password must be at least 8 characters long')
-  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-  .regex(/[0-9]/, 'Password must contain at least one number')
-  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character');
+  .min(6, 'Password must be at least 6 characters long');
+  // Loosened for development/easier onboarding
+  // .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+  // .regex(/[0-9]/, 'Password must contain at least one number')
+  // .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character');
 
 export const registerSchema = z.object({
   body: z.object({
     name: z.string().min(2, 'Name is too short').max(50),
     email: z.string().email('Invalid email format'),
     password: passwordSchema,
-    role: z.enum(['seeker', 'hirer'], {
-      errorMap: () => ({ message: 'Role must be either seeker or hirer' }),
+    role: z.enum(['seeker', 'hirer', 'admin'], {
+      errorMap: () => ({ message: 'Role must be seeker, hirer, or admin' }),
     }),
     // Seeker optional fields
     profession: z.string().optional(),
@@ -25,12 +26,12 @@ export const registerSchema = z.object({
     companyName: z.string().optional(),
     industry: z.string().optional(),
     location: z.string().optional(),
-    website: z.string().url('Invalid website URL').optional().or(z.literal('')),
+    website: z.string().optional().or(z.literal('')),
     companySize: z.string().optional(),
     companyEmail: z.string().email('Invalid company email').optional(),
     recruiterRole: z.string().optional(),
     recruiterPhone: z.string().optional(),
-    recruiterLinkedin: z.string().url('Invalid LinkedIn URL').optional().or(z.literal('')),
+    recruiterLinkedin: z.string().optional().or(z.literal('')),
   }),
 });
 

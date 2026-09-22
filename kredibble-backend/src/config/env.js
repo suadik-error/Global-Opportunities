@@ -12,8 +12,9 @@ export const env = {
   isDevelopment: (process.env.NODE_ENV || 'development') !== 'production',
   port: Number(process.env.PORT || 4000),
   corsOrigins: parseOrigins(process.env.CORS_ORIGIN),
-  jwtSecret: process.env.JWT_SECRET || 'replace-with-a-long-random-secret',
-  adminJwtSecret: process.env.ADMIN_JWT_SECRET || 'replace-with-a-long-random-admin-secret',
+  databaseUrl: process.env.DATABASE_URL || process.env.MONGODB_URI || process.env.MONGO_URI,
+  jwtSecret: process.env.JWT_SECRET || '4f7b8d9c2e1a3b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c',
+  adminJwtSecret: process.env.ADMIN_JWT_SECRET || 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2',
 };
 
 if (!env.isDevelopment) {

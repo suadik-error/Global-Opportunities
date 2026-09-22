@@ -1,59 +1,75 @@
-import { MongoClient } from 'mongodb';
-import dotenv from 'dotenv';
+import mongoose from 'mongoose';
+import { env } from '../config/env.js';
 
-dotenv.config();
+const uri = env.databaseUrl;
 
-const uri = process.env.DATABASE_URL;
-const client = new MongoClient(uri, {
-  serverSelectionTimeoutMS: 5000,
-  connectTimeoutMS: 10000,
-  // Added for serverless stability
-  maxPoolSize: 1,
-  minPoolSize: 0,
-});
+const maskMongoUri = (value) => value.replace(/(mongodb(?:\+srv)?:\/\/[^:\s]+:)[^@\s]+@/i, '$1***@');
 
-let db;
-let lastError = null;
+const getConnectionErrorHint = (error) => {
+  if (error?.message?.includes('queryTxt ETIMEOUT')) {
+    return 'Atlas SRV DNS TXT lookup timed out. Use the Atlas standard mongodb:// connection string, or try another DNS/network.';
+  }
+
+  if (error?.message?.includes('bad auth') || error?.message?.includes('Authentication failed')) {
+    return 'Check the Atlas database username and password in your MongoDB connection string.';
+  }
+
+  if (error?.message?.includes('IP') || error?.message?.includes('whitelist')) {
+    return 'Check that your current IP address is allowed in Atlas Network Access.';
+  }
+
+  return null;
+};
 
 export async function connectToDatabase() {
-  if (db) return db;
+  if (mongoose.connection.readyState >= 1) return mongoose.connection;
+  if (!uri) {
+    throw new Error('Missing MongoDB connection string. Set DATABASE_URL, MONGODB_URI, or MONGO_URI in kredibble-backend/.env.');
+  }
 
   try {
-    await client.connect();
-    console.log('Successfully connected to MongoDB Atlas (Native)');
-    db = client.db();
-    lastError = null;
-    return db;
+    await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 10000,
+      dbName: 'kredibble',
+    });
+    console.log(`Successfully connected to MongoDB via Mongoose: ${maskMongoUri(uri)}`);
+    return mongoose.connection;
   } catch (err) {
-    lastError = err.message;
-    console.error('Failed to connect to MongoDB:', err.message);
+    const hint = getConnectionErrorHint(err);
+    console.error('Mongoose connection error:', hint ? `${err.message}. ${hint}` : err.message);
     throw err;
   }
 }
 
-export const getDb = () => {
-  if (!db) {
-    throw new Error(`Database not initialized. Last error: ${lastError || 'None'}. Check your Atlas IP whitelist and network connection.`);
-  }
-  return db;
-};
+export const getDb = () => mongoose.connection.db;
 
-// Helper for collections
-export const collections = {
-  users: () => getDb().collection('users'),
-  seekers: () => getDb().collection('seekers'),
-  hirers: () => getDb().collection('hirers'),
-  opportunities: () => getDb().collection('opportunities'),
-  applicants: () => getDb().collection('applicants'),
-  candidates: () => getDb().collection('candidates'),
-  channels: () => getDb().collection('channels'),
-  posts: () => getDb().collection('posts'),
-  reports: () => getDb().collection('reports'),
-  events: () => getDb().collection('events'),
-  grants: () => getDb().collection('grants'),
-  articles: () => getDb().collection('articles'),
-  staff: () => getDb().collection('staff'),
-  notifications: () => getDb().collection('notifications'),
-  verifications: () => getDb().collection('verifications'),
-  grantApplications: () => getDb().collection('grantApplications'),
+// Re-exporting all models
+import { User, StaffMember } from '../models/User.js';
+import { SeekerProfile, HirerAccount, Candidate } from '../models/Profiles.js';
+import {
+  Opportunity, Applicant, Event, Grant,
+  GrantApplication, CompanyVerification, VerificationDoc
+} from '../models/Platform.js';
+import { Channel, ChannelPost, Report } from '../models/Community.js';
+import { Article, Notification } from '../models/Content.js';
+
+export const models = {
+  User,
+  StaffMember,
+  SeekerProfile,
+  HirerAccount,
+  Candidate,
+  Opportunity,
+  Applicant,
+  Event,
+  Grant,
+  GrantApplication,
+  CompanyVerification,
+  VerificationDoc,
+  Channel,
+  ChannelPost,
+  Report,
+  Article,
+  Notification
 };
