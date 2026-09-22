@@ -44,14 +44,14 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "start": "set EXPO_NO_DEPENDENCY_VALIDATION=1&& expo start --clear",
-    "start:windows": "set EXPO_NO_DEPENDENCY_VALIDATION=1&& expo start --clear",
+    "start": "set EXPO_NO_METRO_WORKSPACE_ROOT=1&& set EXPO_NO_DEPENDENCY_VALIDATION=1&& expo start --clear",
+    "start:windows": "set EXPO_NO_METRO_WORKSPACE_ROOT=1&& set EXPO_NO_DEPENDENCY_VALIDATION=1&& expo start --clear",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
-    "android:windows": "set EXPO_NO_DEPENDENCY_VALIDATION=1&& expo run:android",
+    "android:windows": "set EXPO_NO_METRO_WORKSPACE_ROOT=1&& set EXPO_NO_DEPENDENCY_VALIDATION=1&& expo run:android",
     "ios": "expo run:ios",
-    "web": "set EXPO_NO_DEPENDENCY_VALIDATION=1&& expo start --web --clear",
-    "web:windows": "set EXPO_NO_DEPENDENCY_VALIDATION=1&& expo start --web --clear",
+    "web": "set EXPO_NO_METRO_WORKSPACE_ROOT=1&& set EXPO_NO_DEPENDENCY_VALIDATION=1&& expo start --web --clear",
+    "web:windows": "set EXPO_NO_METRO_WORKSPACE_ROOT=1&& set EXPO_NO_DEPENDENCY_VALIDATION=1&& expo start --web --clear",
     "lint": "expo lint"
   },
   "private": true

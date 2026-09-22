@@ -5,7 +5,10 @@ const { withNativeWind } = require("nativewind/metro");
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
 
+config.projectRoot = __dirname;
+config.watchFolders = [__dirname];
 config.resolver.blockList = [
+  /.*[\\\/]Global-Opportunities[\\\/]node_modules[\\\/].*/,
   /.*[\\\/]\.git[\\\/].*/,
   /.*[\\\/]\.expo[\\\/].*/,
 ];

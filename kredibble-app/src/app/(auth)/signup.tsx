@@ -14,8 +14,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Eye, EyeOff, ChevronDown, ChevronLeft, Search, Upload, Check, Home } from 'lucid-react-native';
-import Svg, { G, Rect, Devs, ClipPath } from 'react-native-svg';
+import { Eye, EyeOff, ChevronDown, ChevronLeft, Search, Upload, Check, Home } from 'lucide-react-native';
+import Svg, { G, Rect, Defs, ClipPath } from 'react-native-svg';
 import { authStore } from '../../constants/authStore';
 import { profileStore } from '../../constants/mockProfile';
 import { signupMobile } from '../../lib/api';

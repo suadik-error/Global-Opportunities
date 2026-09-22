@@ -13,8 +13,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Check, X, Eye, EyeOff, Home } from 'lucid-react-native';
-import Svg, { G, Rect, Devs, ClipPath, Path } from 'react-native-svg';
+import { Check, X, Eye, EyeOff, Home } from 'lucide-react-native';
+import Svg, { G, Rect, Defs, ClipPath, Path } from 'react-native-svg';
 import { authStore } from '../../constants/authStore';
 import { loginMobile } from '../../lib/api';
 
@@ -37,11 +37,11 @@ const SuccessBadge = () => (
         fill="#6671E4"
       />
     </G>
-    <Devs>
+    <Defs>
       <ClipPath id="clip_badge">
         <Rect width="70" height="70" fill="white" />
       </ClipPath>
-    </Devs>
+    </Defs>
   </Svg>
 );
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Home } from 'lucid-react-native';
+import { Home } from 'lucide-react-native';
 
 export default function AuthEntryScreen() {
   const router = useRouter();
