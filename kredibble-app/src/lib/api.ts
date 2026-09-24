@@ -24,13 +24,24 @@ const fallbackApiUrl = Platform.select({
 
 const getApiUrl = () => {
   const envUrl = process.env.EXPO_PUBLIC_API_URL;
-  if (!envUrl) return fallbackApiUrl || 'http://localhost:4000/api';
+  if (!envUrl) {
+    if (typeof __DEV__ !== 'undefined' && !__DEV__) {
+      throw new Error('Missing EXPO_PUBLIC_API_URL for this production build.');
+    }
 
-  if (envUrl.includes('.') && !envUrl.startsWith('http')) {
-    return `https://${envUrl.replace(/\/$/, '')}`;
+    return fallbackApiUrl || 'http://localhost:4000/api';
   }
 
-  return envUrl.replace(/\/$/, '');
+  const normalizedUrl = envUrl.replace(/\/$/, '');
+  if (typeof __DEV__ !== 'undefined' && !__DEV__ && normalizedUrl.startsWith('http://')) {
+    throw new Error('EXPO_PUBLIC_API_URL must use HTTPS in production builds.');
+  }
+
+  if (normalizedUrl.includes('.') && !normalizedUrl.startsWith('http')) {
+    return `https://${normalizedUrl}`;
+  }
+
+  return normalizedUrl;
 };
 
 export const API_BASE_URL = getApiUrl();
@@ -64,7 +75,7 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
     });
   } catch {
     throw new Error(
-      `Cannot reach the Kredibble API at ${API_BASE_URL}. Start the backend with "npm run dev" in kredibble-backend, then try again.`,
+      `Cannot reach the Kredibble API at ${API_BASE_URL}. Check EXPO_PUBLIC_API_URL, backend availability, HTTPS, and CORS_ORIGIN.`,
     );
   }
 
