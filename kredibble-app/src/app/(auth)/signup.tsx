@@ -668,7 +668,7 @@ export default function SignupScreen() {
         });
       }
 
-      router.replace('/(auth)/loading');
+      router.replace('/(tabs)');
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Unable to create account');
     } finally {
@@ -724,7 +724,7 @@ export default function SignupScreen() {
         }}
       >
         <TouchableOpacity
-          onPress={() => router.replace('/(tabs)')}
+          onPress={() => router.replace('/(onboarding)/1')}
           style={{
             flexDirection: 'row',
             alignItems: 'center',
@@ -737,7 +737,7 @@ export default function SignupScreen() {
         >
           <Home size={16} color="#6671E4" />
           <Text style={{ fontSize: 13, color: '#6671E4', fontWeight: '600' }} className="font-sans">
-            Home
+            Intro
           </Text>
         </TouchableOpacity>
       </View>

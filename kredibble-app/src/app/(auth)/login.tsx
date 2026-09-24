@@ -168,7 +168,7 @@ export default function LoginScreen() {
         }}
       >
         <TouchableOpacity
-          onPress={() => router.replace('/(tabs)')}
+          onPress={() => router.replace('/(onboarding)/1')}
           style={{
             flexDirection: 'row',
             alignItems: 'center',
@@ -181,7 +181,7 @@ export default function LoginScreen() {
         >
           <Home size={16} color="#6671E4" />
           <Text style={{ fontSize: 13, color: '#6671E4', fontWeight: '600' }} className="font-sans">
-            Home
+            Intro
           </Text>
         </TouchableOpacity>
       </View>

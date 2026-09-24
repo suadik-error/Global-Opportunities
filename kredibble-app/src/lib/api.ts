@@ -51,14 +51,22 @@ export const getMobileToken = () =>
 
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = getMobileToken();
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...init.headers,
-    },
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...init.headers,
+      },
+    });
+  } catch {
+    throw new Error(
+      `Cannot reach the Kredibble API at ${API_BASE_URL}. Start the backend with "npm run dev" in kredibble-backend, then try again.`,
+    );
+  }
 
   const payload = await response.json().catch(() => null);
 

@@ -20,8 +20,17 @@ async function startServer() {
     }
   }
 
-  app.listen(env.port, () => {
+  const server = app.listen(env.port, env.host, () => {
     console.log(`🚀 Kredibble API listening on http://localhost:${env.port}/api`);
+  });
+
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`Port ${env.port} is already in use. Stop the existing backend server and try again.`);
+      process.exit(1);
+    }
+
+    throw error;
   });
 }
 

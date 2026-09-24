@@ -11,6 +11,7 @@ export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   isDevelopment: (process.env.NODE_ENV || 'development') !== 'production',
   port: Number(process.env.PORT || 4000),
+  host: process.env.HOST || '0.0.0.0',
   corsOrigins: parseOrigins(process.env.CORS_ORIGIN),
   databaseUrl: process.env.DATABASE_URL || process.env.MONGODB_URI || process.env.MONGO_URI,
   jwtSecret: process.env.JWT_SECRET || '4f7b8d9c2e1a3b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c',
